@@ -17,7 +17,12 @@ body { height: 100%; margin: 0px; padding: 0px }
 </style>
 
 <div id="map_wrapper">
-    <div id="map_canvas" class="mapping">Detecting ari location...</div>
+<div id="divInfo" style="height:500px; width:200px;position:absolute;z-index:10;margin-top:25px">
+<ol id="oList" style="padding-left: 25px">
+
+</ol>
+</div>
+    <div id="map_canvas" class="mapping">Detecting light location...</div>	
 </div>
 
 <script>
@@ -26,16 +31,39 @@ var markers = [];
 var infoWindowContent = [];
 var marker_images = [];
 var first_load = true;
+var intLogCount = 0;
+
+var mapkey = "AIzaSyBvpSmE7zOpHlaNFVM0gmvPOOw_UwKNCLk"; //light mapkey
+<!-- var mapkey = "AIzaSyBw7AVigBmUfMwHNTC2smP0mdGyolLYzLI"; //dark mapkey -->
+<!-- var mapkey = "AIzaSyCr8EY3DXSojd7EH4OMY3itP79-18_-eJ0"; //ari mapkey -->
 
 jQuery(function($) {
-    // Asynchronously Load the map API 
-    var script = document.createElement('script');
-    script.src = "//maps.googleapis.com/maps/api/js?key=AIzaSyCr8EY3DXSojd7EH4OMY3itP79-18_-eJ0&sensor=false&callback=map_api_loaded";
+	logging("loading map");	
+    // Asynchronously Load the map API     	
+	var script = document.createElement('script');	
+    script.src = "//maps.googleapis.com/maps/api/js?key=" + mapkey + "&sensor=false&callback=map_api_loaded";	
     document.body.appendChild(script);
 });
 
+function logging(strLog){
+	var ul = $("#divInfo ol");		
+	intLogCount++;
+	console.log(intLogCount);
+	
+	ul.append('<li> ' + strLog + '</li>');
+	
+	if(intLogCount > 10){
+		var list = $("#oList");
+		
+		ul.find(":first-child").remove();
+		intLogCount--;
+		
+	};
+}
+
 function map_api_loaded() {
     navigator.geolocation.getCurrentPosition(handler);
+	logging("map loaded");
 }
 
 function build_initial_map(location) {
@@ -86,6 +114,7 @@ function build_map_update(location) {
 		},
 		error: function() {
 			console.log('Error while attempting to retrieve poke locations');
+			logging("Error while attempting to retrieve poke locations");
 			setTimeout(function(){
 				navigator.geolocation.getCurrentPosition(handler);
 			}, 5000);
@@ -95,10 +124,14 @@ function build_map_update(location) {
 
 function handler(location) {
 	if (first_load) {
+	logging("map initializing");
         build_initial_map(location);
+		logging("map initialized");
     }
 	else {
+	logging("map updating");
 		build_map_update(location);
+		logging("map updated");
 	}
 }
 
@@ -108,14 +141,14 @@ function create_map() {
     var mapOptions = {
         mapTypeId: 'roadmap'
     };
-                    
+    logging("displaying map");
     // Display a map on the page
     map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
     map.setTilt(45);
         
     // Display multiple markers on a map
     var infoWindow = new google.maps.InfoWindow(), marker, i;
-    
+    if(markers.length > 0){logging("loading pokes");};
     // Loop through our array of markers & place each one on the map  
     for( i = 0; i < markers.length; i++ ) {
         var position = new google.maps.LatLng(markers[i][1], markers[i][2]);
@@ -138,6 +171,8 @@ function create_map() {
         // Automatically center the map fitting all markers on the screen
         map.fitBounds(bounds);
     }
+	
+	if(markers.length > 0){logging("all pokes loaded");};
 
     // Override our map zoom level once our fitBounds function runs (Make sure it only runs once)
     var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
